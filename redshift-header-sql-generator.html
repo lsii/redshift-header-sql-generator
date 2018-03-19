@@ -1,0 +1,133 @@
+<html>
+
+  <head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.15/dist/vue.js"></script>
+  </head>
+
+
+  <body>
+
+    <div
+      id="app"
+      style="
+        display: flex;
+        align-items: middle;
+        padding: 40px;
+        justify-content: center;
+        flex-direction: column;
+      "
+      >
+
+      <h4 style="margin:-10px 0 30px 14px ; color:#444;">ヘッダー付きクエリ生成ページ</h4>
+
+      <div style="display:flex; flex-direction:left;">
+
+        <div
+          style="
+            flex-direction:left;
+            display: flex;
+            font-size: 11px;
+            margin: 14px 8px;
+          "
+          v-for="item in items"
+          >
+          <input
+            style="margin-left: 10px;"
+            type="radio" :id="item.id" :value="item.v" v-model="delimiter"
+            >
+          <label :for="item.id">{{item.name}}</label>
+        </div>
+
+      </div>
+
+      <textarea
+        placeholder="カラム名を改行区切り（またはカンマ区切り、スペース区切り）で入力してください"
+        v-model="pre" name="" id="" cols="30" rows="10"
+        spellcheck="false"
+        >
+      </textarea>
+
+      <button
+        style="
+          height: 40px; width: 20%;
+          margin: 20px auto;
+        "
+        v-on:click="trans"
+        >
+        変換
+      </button>
+
+      <textarea
+        placeholder="ここに出力されたクエリを、UNLOADの括弧内に貼り付けてください "
+        style=""
+        v-model="post" name="" id="" cols="30" rows="10"
+        spellcheck="false"
+        >
+      </textarea>
+
+    </div>
+
+
+    <script>
+
+    new Vue({
+      el: '#app',
+
+      data() {
+        return {
+          pre: '',
+          post: '',
+          delimiter: '\n',
+          items: [
+            {id:'line', name:'改行区切り', v:'\n'},
+            {id:'comma', name:'カンマ区切り', v:','},
+            {id:'space', name:'スペース区切り', v:' '},
+          ]
+        }
+
+      },
+
+      methods: {
+
+        trans() {
+
+          let d = this.delimiter;
+          let pre = this.pre.replace(/　/g, ' ').replace(/\t/g, ' ').replace(/ +/g, ' ');
+          let hArr = pre.trim().split(d).map(v => v.trim());
+
+          let s = `
+          select
+            ${hArr.map((v,i) => `_${i}`).join(', ')}
+          from (
+
+            select
+              ${hArr.map((v,i) => `'${v}' _${i}`).join(', ')}
+              ,0 as sort_order
+
+            union all
+
+            select
+              ${hArr.map((v,i) => `coalesce(cast( ${v} as text), '')`).join(', ')}
+              ,1 as sort_order
+              from {{target_table_name}}
+          )
+          order by sort_order
+          `;
+
+          if (hArr.length === 1 && hArr[0] === '') s = 'カラムが入力されていません。'
+
+          s = s.replace(/'/g, '\\\'');
+          this.post = s;
+
+        }
+
+      }
+
+    })
+
+    </script>
+
+  </body>
+
+</html>
