@@ -1,5 +1,5 @@
 
-# redshift-header-sql-converter
+# redshift-header-sql-generator
 
 Redshiftでヘッダー行付きでUNLOADするための
 SELECT文を生成するHTMLページです。
